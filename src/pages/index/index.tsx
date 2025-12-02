@@ -1,60 +1,126 @@
-import { View, Text, Map } from '@tarojs/components'
-import { useLoad } from '@tarojs/taro'
+import { View, Text, Map, Button } from '@tarojs/components'
+import { useState, useEffect } from 'react'
+import Taro from '@tarojs/taro'
 import './index.scss'
 
 export default function Index () {
-  useLoad(() => {
-    console.log('呱呱车地图页面加载完成')
-  })
+  // 地图中心点坐标（默认：北京天安门附近）
+  const [longitude, setLongitude] = useState(116.397128)
+  const [latitude, setLatitude] = useState(39.916527)
 
-  // 地图中心点坐标（示例：北京天安门附近）
-  const centerLongitude = 116.397128
-  const centerLatitude = 39.916527
-
-  // 观光车站点标记
-  const markers: any[] = [
-    {
-      id: 1,
-      latitude: 39.916527,
-      longitude: 116.397128,
-      title: '游客中心',
-      iconPath: ''
-    },
-    {
-      id: 2,
-      latitude: 39.920527,
-      longitude: 116.400128,
-      title: '观景台',
-      iconPath: ''
-    },
-    {
-      id: 3,
-      latitude: 39.924527,
-      longitude: 116.403128,
-      title: '文化广场',
-      iconPath: ''
+  // 监听位置变化
+  useEffect(() => {
+    const locationChangeHandler = (res: any) => {
+      const { latitude, longitude } = res
+      setLongitude(longitude)
+      setLatitude(latitude)
+      console.log('位置更新：', { latitude, longitude })
     }
-  ]
 
-  // 路线
-  const polyline = [
-    {
-      points: [
-        { latitude: 39.916527, longitude: 116.397128 },
-        { latitude: 39.920527, longitude: 116.400128 },
-        { latitude: 39.924527, longitude: 116.403128 }
-      ],
-      color: '#4A90E2',
-      width: 4
+    // 监听位置变化事件
+    Taro.onLocationChange(locationChangeHandler)
+
+    // 清理函数
+    return () => {
+      Taro.offLocationChange(locationChangeHandler)
     }
-  ]
+  }, [])
 
-  const handleMapTap = () => {
-    console.log('地图被点击')
+  // 获取当前位置
+  const handleGetLocation = () => {
+    Taro.getLocation({
+      type: 'gcj02', // 返回可以用于 Taro Map 组件的坐标
+      isHighAccuracy: true, // 开启高精度定位
+      highAccuracyExpireTime: 4000, // 高精度定位超时时间
+      success: (res) => {
+        const { latitude, longitude, accuracy, speed } = res
+        setLongitude(longitude)
+        setLatitude(latitude)
+        console.log('定位信息：', {
+          latitude,
+          longitude,
+          accuracy,
+          speed
+        })
+        Taro.showToast({
+          title: '定位成功',
+          icon: 'success',
+          duration: 2000
+        })
+      },
+      fail: (err) => {
+        Taro.showToast({
+          title: '获取位置失败',
+          icon: 'none',
+          duration: 2000
+        })
+        console.error('获取位置失败：', err)
+      }
+    })
   }
 
-  const handleMarkerTap = (e: any) => {
-    console.log('标记点被点击', e.detail)
+  // 开启前台接收位置消息
+  const handleStartLocationUpdate = () => {
+    Taro.startLocationUpdate({
+      type: 'gcj02',
+      needFullAccuracy: true,
+      success: () => {
+        Taro.showToast({
+          title: '已开启位置更新',
+          icon: 'success',
+          duration: 2000
+        })
+        console.log('已开启前台位置更新')
+      },
+      fail: (err) => {
+        Taro.showToast({
+          title: '开启失败',
+          icon: 'none',
+          duration: 2000
+        })
+        console.error('开启位置更新失败：', err)
+      }
+    })
+  }
+
+  // 开启前后台接收位置消息
+  const handleStartLocationUpdateBackground = () => {
+    Taro.startLocationUpdateBackground({
+      type: 'gcj02',
+      success: () => {
+        Taro.showToast({
+          title: '已开启后台定位',
+          icon: 'success',
+          duration: 2000
+        })
+        console.log('已开启前后台位置更新')
+      },
+      fail: (err) => {
+        Taro.showToast({
+          title: '开启失败',
+          icon: 'none',
+          duration: 2000
+        })
+        console.error('开启后台位置更新失败：', err)
+      }
+    })
+  }
+
+  // 打开微信内置地图查看位置
+  const handleOpenLocation = () => {
+    Taro.openLocation({
+      latitude: latitude,
+      longitude: longitude,
+      scale: 18,
+      name: '当前位置',
+      address: '呱呱车定位位置',
+      success: () => {
+        console.log('打开地图成功')
+      },
+      fail: (err) => {
+        console.error('打开地图失败：', err)
+      }
+    })
   }
 
   const handleMapError = (e: any) => {
@@ -69,18 +135,27 @@ export default function Index () {
 
       <View className='map-container'>
         <Map
-          longitude={centerLongitude}
-          latitude={centerLatitude}
+          longitude={longitude}
+          latitude={latitude}
           scale={14}
-          markers={markers}
-          polyline={polyline}
-          showLocation={false}
-          enableZoom={true}
-          enableScroll={true}
-          onTap={handleMapTap}
-          onMarkerTap={handleMarkerTap}
+          showLocation={true}
           onError={handleMapError}
         />
+      </View>
+
+      <View className='button-container'>
+        <Button className='location-button' onClick={handleGetLocation}>
+          获取当前位置
+        </Button>
+        <Button className='location-button' onClick={handleStartLocationUpdate}>
+          开启位置更新
+        </Button>
+        <Button className='location-button' onClick={handleStartLocationUpdateBackground}>
+          开启后台定位
+        </Button>
+        <Button className='location-button' onClick={handleOpenLocation}>
+          打开地图
+        </Button>
       </View>
     </View>
   )
