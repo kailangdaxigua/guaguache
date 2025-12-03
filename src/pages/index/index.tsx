@@ -1,10 +1,7 @@
-import { View, Text } from "@tarojs/components";
+import { View, Text, Map } from "@tarojs/components";
 import { useState, useEffect } from "react";
 import Taro from "@tarojs/taro";
 import "./index.scss";
-
-// 关键改动：使用小程序原生组件 map
-const Map: any = "map";
 
 interface LocationHistory {
   latitude: number;
@@ -18,7 +15,6 @@ export default function Index() {
   const [latitude, setLatitude] = useState(39.916527);
   const [scale, setScale] = useState(14);
   const [accuracy, setAccuracy] = useState<number | null>(null);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -105,10 +101,6 @@ export default function Index() {
     if (scale > 5) setScale(scale - 2);
   };
 
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
   const toggleHistory = () => {
     setShowHistory(!showHistory);
   };
@@ -135,7 +127,7 @@ export default function Index() {
         <Text className="subtitle">实时位置追踪系统</Text>
       </View>
 
-      <View className={`map-container ${isFullscreen ? "fullscreen" : ""}`}>
+      <View className="map-container">
         <Map
           longitude={longitude}
           latitude={latitude}
@@ -154,28 +146,6 @@ export default function Index() {
               -
             </View>
           </View>
-          <View className="fullscreen-btn" onClick={toggleFullscreen}>
-            {isFullscreen ? "📐" : "⛶"}
-          </View>
-        </View>
-
-        <View className="coordinate-card">
-          <View className="coord-row">
-            <Text className="coord-label">经度:</Text>
-            <Text className="coord-value">{longitude.toFixed(6)}°</Text>
-          </View>
-          <View className="coord-row">
-            <Text className="coord-label">纬度:</Text>
-            <Text className="coord-value">{latitude.toFixed(6)}°</Text>
-          </View>
-          {accuracy !== null && (
-            <View className="coord-row">
-              <Text className="coord-label">精度:</Text>
-              <Text className="coord-value accuracy">
-                ±{accuracy.toFixed(0)}m
-              </Text>
-            </View>
-          )}
         </View>
       </View>
 
@@ -199,10 +169,6 @@ export default function Index() {
             )}
           </View>
 
-          <View className="action-btn quaternary" onClick={toggleFullscreen}>
-            <Text className="btn-icon">{isFullscreen ? "📐" : "⛶"}</Text>
-            <Text className="btn-text">{isFullscreen ? "退出" : "全屏"}</Text>
-          </View>
         </View>
       </View>
 
@@ -234,10 +200,6 @@ export default function Index() {
                       </Text>
                     )}
                   </View>
-                  <Text className="history-coord">
-                    📍 {record.latitude.toFixed(6)}°,{" "}
-                    {record.longitude.toFixed(6)}°
-                  </Text>
                 </View>
               ))
             )}
