@@ -59,30 +59,6 @@ export default function Index() {
     });
   };
 
-  // 开启前台接收位置消息
-  const handleStartLocationUpdate = () => {
-    Taro.startLocationUpdate({
-      type: "gcj02",
-      needFullAccuracy: true,
-      success: () => {
-        Taro.showToast({
-          title: "已开启位置更新",
-          icon: "success",
-          duration: 2000,
-        });
-        console.log("已开启前台位置更新");
-      },
-      fail: (err) => {
-        Taro.showToast({
-          title: "开启失败",
-          icon: "none",
-          duration: 2000,
-        });
-        console.error("开启位置更新失败：", err);
-      },
-    });
-  };
-
 
   // 打开微信内置地图查看位置
   const handleOpenLocation = () => {
@@ -124,9 +100,6 @@ export default function Index() {
       <View className="button-container">
         <Button className="location-button" onClick={handleGetLocation}>
           获取当前位置
-        </Button>
-        <Button className="location-button" onClick={handleStartLocationUpdate}>
-          开启位置更新
         </Button>
         <Button className="location-button" onClick={handleOpenLocation}>
           打开地图
