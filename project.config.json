@@ -28,8 +28,10 @@
       "disablePlugins": [],
       "outputPath": ""
     },
+    "libVersion": "2.30.0",
     "ignoreUploadUnusedFiles": true
   },
+
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
   "packOptions": {

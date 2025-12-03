@@ -1,57 +1,79 @@
-import { View, Text, Map, Button } from "@tarojs/components";
+import { View, Text } from "@tarojs/components";
 import { useState, useEffect } from "react";
 import Taro from "@tarojs/taro";
 import "./index.scss";
 
+// 关键改动：使用小程序原生组件 map
+const Map: any = "map";
+
+interface LocationHistory {
+  latitude: number;
+  longitude: number;
+  time: string;
+  accuracy?: number;
+}
+
 export default function Index() {
-  // 地图中心点坐标（默认：北京天安门附近）
   const [longitude, setLongitude] = useState(116.397128);
   const [latitude, setLatitude] = useState(39.916527);
+  const [scale, setScale] = useState(14);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
-  // 监听位置变化
   useEffect(() => {
     const locationChangeHandler = (res: any) => {
-      const { latitude, longitude } = res;
+      const { latitude, longitude, accuracy } = res;
       setLongitude(longitude);
       setLatitude(latitude);
-      console.log("位置更新：", { latitude, longitude });
+      if (accuracy) setAccuracy(accuracy);
+      console.log("位置更新：", { latitude, longitude, accuracy });
     };
 
-    // 监听位置变化事件
     Taro.onLocationChange(locationChangeHandler);
 
-    // 清理函数
     return () => {
       Taro.offLocationChange(locationChangeHandler);
     };
   }, []);
 
-  // 获取当前位置
+  const addToHistory = (lat: number, lon: number, acc?: number) => {
+    const newRecord: LocationHistory = {
+      latitude: lat,
+      longitude: lon,
+      time: new Date().toLocaleTimeString("zh-CN"),
+      accuracy: acc,
+    };
+    setLocationHistory((prev) => [newRecord, ...prev.slice(0, 4)]);
+  };
+
   const handleGetLocation = () => {
+    Taro.showLoading({ title: "定位中..." });
     Taro.getLocation({
-      type: "gcj02", // 返回可以用于 Taro Map 组件的坐标
-      isHighAccuracy: true, // 开启高精度定位
-      highAccuracyExpireTime: 4000, // 高精度定位超时时间
+      type: "gcj02",
+      isHighAccuracy: true,
+      highAccuracyExpireTime: 4000,
       success: (res) => {
         const { latitude, longitude, accuracy, speed } = res;
         setLongitude(longitude);
         setLatitude(latitude);
-        console.log("定位信息：", {
-          latitude,
-          longitude,
-          accuracy,
-          speed,
-        });
+        setAccuracy(accuracy || null);
+        addToHistory(latitude, longitude, accuracy);
+
+        Taro.hideLoading();
         Taro.showToast({
           title: "定位成功",
           icon: "success",
           duration: 2000,
         });
+        console.log("定位信息：", { latitude, longitude, accuracy, speed });
       },
       fail: (err) => {
+        Taro.hideLoading();
         Taro.showToast({
-          title: "获取位置失败",
-          icon: "none",
+          title: "定位失败",
+          icon: "error",
           duration: 2000,
         });
         console.error("获取位置失败：", err);
@@ -59,8 +81,6 @@ export default function Index() {
     });
   };
 
-
-  // 打开微信内置地图查看位置
   const handleOpenLocation = () => {
     Taro.openLocation({
       latitude: latitude,
@@ -77,6 +97,33 @@ export default function Index() {
     });
   };
 
+  const handleZoomIn = () => {
+    if (scale < 18) setScale(scale + 2);
+  };
+
+  const handleZoomOut = () => {
+    if (scale > 5) setScale(scale - 2);
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const toggleHistory = () => {
+    setShowHistory(!showHistory);
+  };
+
+  const jumpToHistory = (record: LocationHistory) => {
+    setLatitude(record.latitude);
+    setLongitude(record.longitude);
+    setShowHistory(false);
+    Taro.showToast({
+      title: "已定位到历史位置",
+      icon: "success",
+      duration: 1500,
+    });
+  };
+
   const handleMapError = (e: any) => {
     console.log("地图错误", e.detail);
   };
@@ -84,27 +131,119 @@ export default function Index() {
   return (
     <View className="index">
       <View className="header">
-        <Text className="title">呱呱车地图路线</Text>
+        <Text className="title">🚗 呱呱车定位</Text>
+        <Text className="subtitle">实时位置追踪系统</Text>
       </View>
 
-      <View className="map-container">
+      <View className={`map-container ${isFullscreen ? "fullscreen" : ""}`}>
         <Map
           longitude={longitude}
           latitude={latitude}
-          scale={14}
+          scale={scale}
           showLocation={true}
           onError={handleMapError}
+          className="map"
         />
+
+        <View className="map-controls">
+          <View className="zoom-controls">
+            <View className="control-btn zoom-in" onClick={handleZoomIn}>
+              +
+            </View>
+            <View className="control-btn zoom-out" onClick={handleZoomOut}>
+              -
+            </View>
+          </View>
+          <View className="fullscreen-btn" onClick={toggleFullscreen}>
+            {isFullscreen ? "📐" : "⛶"}
+          </View>
+        </View>
+
+        <View className="coordinate-card">
+          <View className="coord-row">
+            <Text className="coord-label">经度:</Text>
+            <Text className="coord-value">{longitude.toFixed(6)}°</Text>
+          </View>
+          <View className="coord-row">
+            <Text className="coord-label">纬度:</Text>
+            <Text className="coord-value">{latitude.toFixed(6)}°</Text>
+          </View>
+          {accuracy !== null && (
+            <View className="coord-row">
+              <Text className="coord-label">精度:</Text>
+              <Text className="coord-value accuracy">
+                ±{accuracy.toFixed(0)}m
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      <View className="button-container">
-        <Button className="location-button" onClick={handleGetLocation}>
-          获取当前位置
-        </Button>
-        <Button className="location-button" onClick={handleOpenLocation}>
-          打开地图
-        </Button>
+      <View className="action-section">
+        <View className="button-grid">
+          <View className="action-btn primary" onClick={handleGetLocation}>
+            <Text className="btn-icon">📍</Text>
+            <Text className="btn-text">获取定位</Text>
+          </View>
+
+          <View className="action-btn secondary" onClick={handleOpenLocation}>
+            <Text className="btn-icon">🗺️</Text>
+            <Text className="btn-text">打开地图</Text>
+          </View>
+
+          <View className="action-btn tertiary" onClick={toggleHistory}>
+            <Text className="btn-icon">📜</Text>
+            <Text className="btn-text">历史记录</Text>
+            {locationHistory.length > 0 && (
+              <View className="badge">{locationHistory.length}</View>
+            )}
+          </View>
+
+          <View className="action-btn quaternary" onClick={toggleFullscreen}>
+            <Text className="btn-icon">{isFullscreen ? "📐" : "⛶"}</Text>
+            <Text className="btn-text">{isFullscreen ? "退出" : "全屏"}</Text>
+          </View>
+        </View>
       </View>
+
+      {showHistory && (
+        <View className="history-panel">
+          <View className="history-header">
+            <Text className="history-title">定位历史</Text>
+            <Text className="history-close" onClick={toggleHistory}>
+              ✕
+            </Text>
+          </View>
+          <View className="history-list">
+            {locationHistory.length === 0 ? (
+              <View className="empty-history">
+                <Text className="empty-text">暂无历史记录</Text>
+              </View>
+            ) : (
+              locationHistory.map((record, index) => (
+                <View
+                  key={index}
+                  className="history-item"
+                  onClick={() => jumpToHistory(record)}
+                >
+                  <View className="history-item-header">
+                    <Text className="history-time">🕐 {record.time}</Text>
+                    {record.accuracy && (
+                      <Text className="history-accuracy">
+                        ±{record.accuracy.toFixed(0)}m
+                      </Text>
+                    )}
+                  </View>
+                  <Text className="history-coord">
+                    📍 {record.latitude.toFixed(6)}°,{" "}
+                    {record.longitude.toFixed(6)}°
+                  </Text>
+                </View>
+              ))
+            )}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
