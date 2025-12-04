@@ -27,17 +27,6 @@ export default defineAppConfig({
     ],
   },
 
-  // 新增分包配置：后续可在这些目录下新增非核心页面
-  subpackages: [
-    {
-      root: "pages/order",
-      pages: ["detail/index", "list/index"],
-    },
-    {
-      root: "pages/marketing",
-      pages: ["coupon/index"],
-    },
-  ],
 
   requiredBackgroundModes: ["location"], // 开启后台定位
   permission: {
@@ -45,4 +34,5 @@ export default defineAppConfig({
       desc: "用于显示当前位置与地图功能",
     },
   },
+  requiredPrivateInfos: ["onLocationChange"],
 });

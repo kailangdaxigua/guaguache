@@ -13,7 +13,7 @@ export default function Index() {
   const [longitude, setLongitude] = useState(116.397128);
   const [latitude, setLatitude] = useState(39.916527);
   const [scale, setScale] = useState(14);
-  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [, setAccuracy] = useState<number | null>(null);
   const [locationHistory, setLocationHistory] = useState<LocationHistory[]>([]);
   const [showHistory, setShowHistory] = useState(false);
 
