@@ -1,7 +1,6 @@
 import { View, Text, Map } from "@tarojs/components";
 import { useState, useEffect } from "react";
 import Taro from "@tarojs/taro";
-import "./index.scss";
 
 interface LocationHistory {
   latitude: number;
@@ -121,81 +120,102 @@ export default function Index() {
   };
 
   return (
-    <View className="index">
-      <View className="header">
-        <Text className="title">🚗 呱呱车定位</Text>
-        <Text className="subtitle">实时位置追踪系统</Text>
+    <View className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 relative">
+      <View className="bg-gradient-to-br from-indigo-500 to-purple-600 px-8 pt-10 pb-8 text-center shadow-lg relative">
+        <Text className="block mb-2 text-3xl font-bold text-white drop-shadow">
+          🚗 呱呱车定位
+        </Text>
+        <Text className="block text-xl font-light text-white/90">实时位置追踪系统</Text>
       </View>
 
-      <View className="map-container">
+      <View className="mx-5 my-5 h-[500px] rounded-2xl overflow-hidden shadow-2xl bg-white relative transition-all duration-300">
         <Map
           longitude={longitude}
           latitude={latitude}
           scale={scale}
           showLocation={true}
           onError={handleMapError}
-          className="map"
+          className="w-full h-full"
         />
 
-        <View className="map-controls">
-          <View className="zoom-controls">
-            <View className="control-btn zoom-in" onClick={handleZoomIn}>
+        <View className="absolute top-5 right-5 z-10 flex flex-col gap-2.5">
+          <View className="flex flex-col gap-2">
+            <View
+              className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center text-2xl font-bold text-indigo-500 shadow-md active:scale-95 active:shadow-sm transition"
+              onClick={handleZoomIn}
+            >
               +
             </View>
-            <View className="control-btn zoom-out" onClick={handleZoomOut}>
+            <View
+              className="w-12 h-12 bg-white/90 rounded-xl flex items-center justify-center text-2xl font-bold text-indigo-500 shadow-md active:scale-95 active:shadow-sm transition"
+              onClick={handleZoomOut}
+            >
               -
             </View>
           </View>
         </View>
       </View>
-
-      <View className="action-section">
-        <View className="button-grid">
-          <View className="action-btn primary" onClick={handleGetLocation}>
-            <Text className="btn-icon">📍</Text>
-            <Text className="btn-text">获取定位</Text>
+      <View className="p-5">
+        <View className="grid grid-cols-2 gap-4">
+          <View
+            className="relative flex flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 p-5 shadow-md active:translate-y-0.5 active:shadow-sm transition"
+            onClick={handleGetLocation}
+          >
+            <Text className="text-4xl">📍</Text>
+            <Text className="text-lg font-semibold text-white">获取定位</Text>
           </View>
 
-          <View className="action-btn secondary" onClick={handleOpenLocation}>
-            <Text className="btn-icon">🗺️</Text>
-            <Text className="btn-text">打开地图</Text>
+          <View
+            className="relative flex flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 p-5 shadow-md active:translate-y-0.5 active:shadow-sm transition"
+            onClick={handleOpenLocation}
+          >
+            <Text className="text-4xl">🗺️</Text>
+            <Text className="text-lg font-semibold text-white">打开地图</Text>
           </View>
 
-          <View className="action-btn tertiary" onClick={toggleHistory}>
-            <Text className="btn-icon">📜</Text>
-            <Text className="btn-text">历史记录</Text>
+          <View
+            className="relative flex flex-col items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-sky-400 to-cyan-400 p-5 shadow-md active:translate-y-0.5 active:shadow-sm transition"
+            onClick={toggleHistory}
+          >
+            <Text className="text-4xl">📜</Text>
+            <Text className="text-lg font-semibold text-white">历史记录</Text>
             {locationHistory.length > 0 && (
-              <View className="badge">{locationHistory.length}</View>
+              <View className="absolute top-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                {locationHistory.length}
+              </View>
             )}
           </View>
-
         </View>
       </View>
-
       {showHistory && (
-        <View className="history-panel">
-          <View className="history-header">
-            <Text className="history-title">定位历史</Text>
-            <Text className="history-close" onClick={toggleHistory}>
+        <View className="fixed bottom-0 left-0 right-0 max-h-[70vh] bg-white rounded-t-[30px] shadow-2xl z-50 animate-[slideUp_0.3s_ease]">
+          <View className="flex items-center justify-between px-8 py-7 border-b-2 border-gray-100">
+            <Text className="text-2xl font-bold text-gray-800">定位历史</Text>
+            <Text
+              className="w-12 h-12 flex items-center justify-center rounded-full text-3xl text-gray-500 active:bg-gray-100"
+              onClick={toggleHistory}
+            >
               ✕
             </Text>
           </View>
-          <View className="history-list">
+          <View className="px-5 py-4 max-h-[50vh] overflow-y-auto">
             {locationHistory.length === 0 ? (
-              <View className="empty-history">
-                <Text className="empty-text">暂无历史记录</Text>
+              <View className="py-16 px-5 text-center">
+                <Text className="text-xl text-gray-400">暂无历史记录</Text>
               </View>
             ) : (
               locationHistory.map((record, index) => (
                 <View
                   key={index}
-                  className="history-item"
+                  className="mb-4 last:mb-0 rounded-2xl px-6 py-5 bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md active:scale-95 transition"
                   onClick={() => jumpToHistory(record)}
                 >
-                  <View className="history-item-header">
-                    <Text className="history-time">🕐 {record.time}</Text>
+                  <View className="flex items-center justify-between mb-2">
+                    <Text className="text-base font-medium text-white/90">
+                      🕐 {record.time}
+                    </Text>
                     {record.accuracy && (
-                      <Text className="history-accuracy">
+                      <Text className="text-xs font-bold text-green-500 bg-white/90 px-3 py-1 rounded-full">
                         ±{record.accuracy.toFixed(0)}m
                       </Text>
                     )}

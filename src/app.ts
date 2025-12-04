@@ -1,6 +1,7 @@
 import { PropsWithChildren } from 'react'
 import { useLaunch } from '@tarojs/taro'
 
+import 'windi.css'
 import './app.scss'
 
 function App({ children }: PropsWithChildren<any>) {
