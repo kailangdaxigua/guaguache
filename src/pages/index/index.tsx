@@ -16,7 +16,7 @@ export default function Index() {
   // 定位精度（未使用，保留用于扩展）
   const [, setAccuracy] = useState<number | null>(null);
 
-  // 监听位置变化
+  // 监听位置变化和启动后台定位
   useEffect(() => {
     // 位置变化回调处理函数
     const locationChangeHandler = (res: any) => {
@@ -30,9 +30,59 @@ export default function Index() {
     // 注册位置变化监听
     Taro.onLocationChange(locationChangeHandler);
 
-    // 组件卸载时移除监听
+    // 启动后台定位（必须调用，否则 onLocationChange 永远不会触发）
+    const initLocationUpdate = async () => {
+      try {
+        // 1. 获取设置，查看是否已授权
+        const setting = await Taro.getSetting();
+        if (!setting.authSetting["scope.userLocation"]) {
+          // 如果未授权，请求前台定位权限
+          await Taro.authorize({ scope: "scope.userLocation" });
+        }
+
+        // 2. 判断是否为开发者工具（模拟器不支持后台定位）
+        const systemInfo = Taro.getSystemInfoSync();
+        const IS_DEVTOOLS = systemInfo.platform === "devtools";
+
+        if (IS_DEVTOOLS) {
+          // 开发者工具模式：仅开启前台定位模拟
+          console.warn("开发者工具模式：仅开启前台定位模拟");
+          await Taro.startLocationUpdate({ type: "gcj02" });
+        } else {
+          // 真机模式：直接调用开启后台定位，系统会自动处理授权弹窗逻辑
+          // 注意：微信小程序无法直接弹窗请求"总是允许（后台）"权限
+          // 调用 startLocationUpdateBackground 时，微信会自动判断并提示用户
+          await Taro.startLocationUpdateBackground({ type: "gcj02" });
+        }
+
+        console.log("定位服务已启动");
+      } catch (e: any) {
+        // 常见错误：用户拒绝了后台权限
+        console.error("定位启动失败：", e);
+        Taro.showModal({
+          title: "权限不足",
+          content: "需要获取您的位置信息才能使用定位服务，请在设置中开启定位权限",
+          showCancel: true,
+          confirmText: "去设置",
+          cancelText: "取消",
+          success: (res) => {
+            if (res.confirm) {
+              // 引导用户去设置页手动开启
+              Taro.openSetting();
+            }
+          },
+        });
+      }
+    };
+
+    initLocationUpdate();
+
+    // 组件卸载时移除监听（但不停止定位更新，保持后台定位持续运行）
     return () => {
       Taro.offLocationChange(locationChangeHandler);
+      // 注意：这里去掉了 stopLocationUpdate，防止切换 Tab 时定位停止
+      // 如果需要在离开页面时停止定位，可以取消下面的注释
+      // Taro.stopLocationUpdate();
     };
   }, []);
 
@@ -89,6 +139,7 @@ export default function Index() {
       <View className="mx-5 my-3 h-[650px] rounded-2xl overflow-hidden shadow-2xl bg-white relative transition-all duration-300">
         {/* 地图组件 */}
         <Map
+          id="locationMap"
           longitude={longitude}
           latitude={latitude}
           scale={scale}
