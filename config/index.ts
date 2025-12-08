@@ -61,6 +61,7 @@ export default defineConfig<'webpack5'>(async (merge) => {
     h5: {
       publicPath: '/',
       staticDirectory: 'static',
+      esnextModules: ['taro-ui'],
       output: {
         filename: 'js/[name].[hash:8].js',
         chunkFilename: 'js/[name].[chunkhash:8].js'
