@@ -50,7 +50,7 @@ export default function Profile() {
           onClick={handleGetUserInfo}
         >
           <Text className='text-2xl mr-3 w-8 text-center'>👤</Text>
-          <Text className='flex-1 text-lg text-gray-800'>个人信息</Text>
+          <Text className='flex-1 text-lg text-gray-800'>   个人信息</Text>
           <Text className='text-xl text-gray-400'>›</Text>
         </View>
 
