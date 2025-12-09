@@ -28,10 +28,7 @@
     "build:quickapp-webview": "uni build -p quickapp-webview"
   },
   "author": "",
-  "dependencies": {
-    "@supabase/supabase-js": "^2.86.2",
-    "@supabase/wechat-js": "^0.1.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@dcloudio/types": "^3.4.8",
     "@dcloudio/uni-automator": "^3.0.0-4020420240930001",
