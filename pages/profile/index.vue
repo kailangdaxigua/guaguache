@@ -1,7 +1,7 @@
 <template>
   <view class="page-container">
     <!-- 用户信息头部区域 -->
-    <view class="header">
+    <view class="header" @tap="handleGoToProfileInfo">
       <!-- 用户头像 -->
       <view class="avatar-container">
         <view class="avatar">
