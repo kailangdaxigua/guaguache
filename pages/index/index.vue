@@ -168,7 +168,7 @@ export default {
 
 .map-container {
   margin: 12px 20px;
-  height: 650px;
+  height: 50vh; // 占屏幕一半高度，避免过长
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
