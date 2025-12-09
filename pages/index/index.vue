@@ -1,0 +1,242 @@
+<template>
+  <view class="page-container">
+    <!-- 页面头部标题区域 -->
+    <view class="header">
+      <text class="header-title">🚗 呱呱车定位</text>
+      <text class="header-subtitle">实时位置追踪系统</text>
+    </view>
+
+    <!-- 地图容器 -->
+    <view class="map-container">
+      <map
+        id="locationMap"
+        :longitude="longitude"
+        :latitude="latitude"
+        :scale="scale"
+        :show-location="true"
+        @error="handleMapError"
+        class="map"
+      ></map>
+    </view>
+
+    <!-- 操作按钮区域 -->
+    <view class="button-container">
+      <view class="button-wrapper">
+        <view class="button" @tap="handleGetLocation">
+          <text class="button-icon">📍</text>
+          <text class="button-text">获取定位</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      longitude: 114.52208,
+      latitude: 30.714933,
+      scale: 14,
+      accuracy: null
+    }
+  },
+  onLoad() {
+    this.initLocationUpdate()
+  },
+  onUnload() {
+    // 组件卸载时移除监听
+    uni.offLocationChange(this.locationChangeHandler)
+  },
+  methods: {
+    // 位置变化回调处理函数
+    locationChangeHandler(res) {
+      const { latitude, longitude, accuracy } = res
+      this.longitude = longitude
+      this.latitude = latitude
+      if (accuracy) this.accuracy = accuracy
+      console.log('位置更新：', { latitude, longitude, accuracy })
+    },
+
+    // 监听位置变化和启动后台定位
+    async initLocationUpdate() {
+      // 注册位置变化监听
+      uni.onLocationChange(this.locationChangeHandler)
+
+      try {
+        // 1. 获取设置，查看是否已授权
+        const setting = await uni.getSetting()
+        if (!setting.authSetting['scope.userLocation']) {
+          // 如果未授权，请求前台定位权限
+          await uni.authorize({
+            scope: 'scope.userLocation'
+          })
+        }
+
+        // 2. 判断是否为开发者工具（模拟器不支持后台定位）
+        const systemInfo = uni.getSystemInfoSync()
+        const IS_DEVTOOLS = systemInfo.platform === 'devtools'
+
+        if (IS_DEVTOOLS) {
+          // 开发者工具模式：仅开启前台定位模拟
+          console.warn('开发者工具模式：仅开启前台定位模拟')
+          await uni.startLocationUpdate({
+            type: 'gcj02'
+          })
+        } else {
+          // 真机模式：直接调用开启后台定位
+          await uni.startLocationUpdateBackground({
+            type: 'gcj02'
+          })
+        }
+
+        console.log('定位服务已启动')
+      } catch (e) {
+        // 常见错误：用户拒绝了后台权限
+        console.error('定位启动失败：', e)
+        uni.showModal({
+          title: '权限不足',
+          content: '需要获取您的位置信息才能使用定位服务，请在设置中开启定位权限',
+          showCancel: true,
+          confirmText: '去设置',
+          cancelText: '取消',
+          success: (res) => {
+            if (res.confirm) {
+              // 引导用户去设置页手动开启
+              uni.openSetting()
+            }
+          }
+        })
+      }
+    },
+
+    // 获取当前位置
+    handleGetLocation() {
+      uni.showLoading({
+        title: '定位中...'
+      })
+      uni.getLocation({
+        type: 'gcj02', // 使用国测局坐标系
+        isHighAccuracy: true, // 启用高精度定位
+        highAccuracyExpireTime: 4000, // 高精度定位超时时间
+        success: (res) => {
+          const { latitude, longitude, accuracy, speed } = res
+          // 更新地图位置
+          this.longitude = longitude
+          this.latitude = latitude
+          this.accuracy = accuracy || null
+
+          uni.hideLoading()
+          uni.showToast({
+            title: '定位成功',
+            icon: 'success',
+            duration: 2000
+          })
+          console.log('定位信息：', { latitude, longitude, accuracy, speed })
+        },
+        fail: (err) => {
+          uni.hideLoading()
+          uni.showToast({
+            title: '定位失败',
+            icon: 'error',
+            duration: 2000
+          })
+          console.error('获取位置失败：', err)
+        }
+      })
+    },
+
+    // 地图错误处理
+    handleMapError(e) {
+      console.log('地图错误', e.detail)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.page-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #667eea, #764ba2);
+  position: relative;
+}
+
+.header {
+  background: linear-gradient(to bottom right, #667eea, #764ba2);
+  padding: 24px 32px 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.header-title {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.header-subtitle {
+  display: block;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.map-container {
+  margin: 12px 20px;
+  height: 650px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background-color: #ffffff;
+  position: relative;
+  transition: all 0.3s;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.button-container {
+  padding: 20px;
+}
+
+.button-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 16px;
+  background: linear-gradient(to bottom right, #667eea, #764ba2);
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.button:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.button-icon {
+  font-size: 32px;
+}
+
+.button-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+</style>
+
