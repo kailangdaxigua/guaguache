@@ -17,7 +17,7 @@
     <!-- 功能菜单列表 -->
     <view class="menu-list">
       <!-- 个人信息菜单项 -->
-      <view class="menu-item" @tap="handleGetUserInfo">
+      <view class="menu-item" @tap="handleGoToProfileInfo">
         <text class="menu-icon">👤</text>
         <text class="menu-text">个人信息</text>
         <text class="menu-arrow">›</text>
@@ -58,18 +58,10 @@
 export default {
   name: 'ProfilePage',
   methods: {
-    // 获取用户信息处理函数
-    handleGetUserInfo() {
-      uni.getUserProfile({
-        desc: '用于完善用户资料',
-        success: (res) => {
-          console.log('用户信息：', res.userInfo)
-          uni.showToast({ title: '获取成功', icon: 'success' })
-        },
-        fail: (err) => {
-          console.error('获取用户信息失败：', err)
-          uni.showToast({ title: '获取失败', icon: 'none' })
-        }
+    // 进入个人信息子包页面
+    handleGoToProfileInfo() {
+      uni.navigateTo({
+        url: '/subpackage/profile/info/index'
       })
     }
   }

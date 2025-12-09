@@ -19,6 +19,19 @@
     "navigationBarBackgroundColor": "#ffffff",
     "backgroundColor": "#ffffff"
   },
+  "subPackages": [
+    {
+      "root": "subpackage/profile",
+      "pages": [
+        {
+          "path": "info/index",
+          "style": {
+            "navigationBarTitleText": "个人信息"
+          }
+        }
+      ]
+    }
+  ],
   "tabBar": {
     "color": "#7A7E83",
     "selectedColor": "#4A90E2",
