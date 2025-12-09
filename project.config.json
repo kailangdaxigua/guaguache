@@ -1,15 +1,16 @@
 {
-  "miniprogramRoot": "dist/",
+  "appid": "wx864aa1ca232aebaf",
+  "compileType": "miniprogram",
   "projectname": "myApp",
   "description": "Test",
-  "appid": "wx864aa1ca232aebaf",
+  "miniprogramRoot": "",
   "setting": {
-    "urlCheck": true,
-    "es6": false,
-    "enhance": false,
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
     "compileHotReLoad": false,
-    "postcss": false,
-    "minified": false,
+    "postcss": true,
+    "minified": true,
     "compileWorklet": false,
     "uglifyFileName": false,
     "uploadWithSourceMap": true,
@@ -29,10 +30,24 @@
       "outputPath": ""
     },
     "libVersion": "2.30.0",
-    "ignoreUploadUnusedFiles": true
+    "ignoreUploadUnusedFiles": true,
+    "coverView": true,
+    "showShadowRootInWxmlPanel": true
   },
-
-  "compileType": "miniprogram",
+  "condition": {
+    "search": {
+      "list": []
+    },
+    "miniprogram": {
+      "list": [
+        {
+          "name": "dev",
+          "pathName": "pages/index/index",
+          "query": ""
+        }
+      ]
+    }
+  },
   "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [],

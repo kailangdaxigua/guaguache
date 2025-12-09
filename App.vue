@@ -6,13 +6,15 @@
 
 <script>
 export default {
-  onLaunch: function() {
+  name: 'App',
+  // 小程序全局生命周期：这里可放初始化逻辑或埋点
+  onLaunch() {
     console.log('App launched.')
   },
-  onShow: function() {
+  onShow() {
     console.log('App show.')
   },
-  onHide: function() {
+  onHide() {
     console.log('App hide.')
   }
 }

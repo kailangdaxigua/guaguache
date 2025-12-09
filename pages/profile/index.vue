@@ -56,24 +56,19 @@
 
 <script>
 export default {
+  name: 'ProfilePage',
   methods: {
     // 获取用户信息处理函数
     handleGetUserInfo() {
       uni.getUserProfile({
-        desc: '用于完善用户资料', // 获取用户信息的用途说明
+        desc: '用于完善用户资料',
         success: (res) => {
           console.log('用户信息：', res.userInfo)
-          uni.showToast({
-            title: '获取成功',
-            icon: 'success'
-          })
+          uni.showToast({ title: '获取成功', icon: 'success' })
         },
         fail: (err) => {
           console.error('获取用户信息失败：', err)
-          uni.showToast({
-            title: '获取失败',
-            icon: 'none'
-          })
+          uni.showToast({ title: '获取失败', icon: 'none' })
         }
       })
     }

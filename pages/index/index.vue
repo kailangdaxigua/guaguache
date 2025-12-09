@@ -32,12 +32,19 @@
 </template>
 
 <script>
+const DEFAULT_COORD = {
+  longitude: 114.52208,
+  latitude: 30.714933,
+  scale: 14
+}
+
 export default {
+  name: 'IndexPage',
   data() {
     return {
-      longitude: 114.52208,
-      latitude: 30.714933,
-      scale: 14,
+      longitude: DEFAULT_COORD.longitude,
+      latitude: DEFAULT_COORD.latitude,
+      scale: DEFAULT_COORD.scale,
       accuracy: null
     }
   },
@@ -45,11 +52,11 @@ export default {
     this.initLocationUpdate()
   },
   onUnload() {
-    // 组件卸载时移除监听
+    // 页面卸载时记得移除监听，防止内存泄漏
     uni.offLocationChange(this.locationChangeHandler)
   },
   methods: {
-    // 位置变化回调处理函数
+    // 位置变化回调：同步地图坐标
     locationChangeHandler(res) {
       const { latitude, longitude, accuracy } = res
       this.longitude = longitude
@@ -58,41 +65,29 @@ export default {
       console.log('位置更新：', { latitude, longitude, accuracy })
     },
 
-    // 监听位置变化和启动后台定位
+    // 监听位置变化并启动（后台）定位
     async initLocationUpdate() {
-      // 注册位置变化监听
       uni.onLocationChange(this.locationChangeHandler)
 
       try {
-        // 1. 获取设置，查看是否已授权
         const setting = await uni.getSetting()
-        if (!setting.authSetting['scope.userLocation']) {
-          // 如果未授权，请求前台定位权限
-          await uni.authorize({
-            scope: 'scope.userLocation'
-          })
+        const hasAuth = setting.authSetting['scope.userLocation']
+        if (!hasAuth) {
+          await uni.authorize({ scope: 'scope.userLocation' })
         }
 
-        // 2. 判断是否为开发者工具（模拟器不支持后台定位）
         const systemInfo = uni.getSystemInfoSync()
         const IS_DEVTOOLS = systemInfo.platform === 'devtools'
 
         if (IS_DEVTOOLS) {
-          // 开发者工具模式：仅开启前台定位模拟
           console.warn('开发者工具模式：仅开启前台定位模拟')
-          await uni.startLocationUpdate({
-            type: 'gcj02'
-          })
+          await uni.startLocationUpdate({ type: 'gcj02' })
         } else {
-          // 真机模式：直接调用开启后台定位
-          await uni.startLocationUpdateBackground({
-            type: 'gcj02'
-          })
+          await uni.startLocationUpdateBackground({ type: 'gcj02' })
         }
 
         console.log('定位服务已启动')
       } catch (e) {
-        // 常见错误：用户拒绝了后台权限
         console.error('定位启动失败：', e)
         uni.showModal({
           title: '权限不足',
@@ -101,52 +96,38 @@ export default {
           confirmText: '去设置',
           cancelText: '取消',
           success: (res) => {
-            if (res.confirm) {
-              // 引导用户去设置页手动开启
-              uni.openSetting()
-            }
+            if (res.confirm) uni.openSetting()
           }
         })
       }
     },
 
-    // 获取当前位置
+    // 手动拉取当前位置
     handleGetLocation() {
-      uni.showLoading({
-        title: '定位中...'
-      })
+      uni.showLoading({ title: '定位中...' })
       uni.getLocation({
-        type: 'gcj02', // 使用国测局坐标系
-        isHighAccuracy: true, // 启用高精度定位
-        highAccuracyExpireTime: 4000, // 高精度定位超时时间
+        type: 'gcj02',
+        isHighAccuracy: true,
+        highAccuracyExpireTime: 4000,
         success: (res) => {
           const { latitude, longitude, accuracy, speed } = res
-          // 更新地图位置
           this.longitude = longitude
           this.latitude = latitude
           this.accuracy = accuracy || null
-
-          uni.hideLoading()
-          uni.showToast({
-            title: '定位成功',
-            icon: 'success',
-            duration: 2000
-          })
+          uni.showToast({ title: '定位成功', icon: 'success', duration: 2000 })
           console.log('定位信息：', { latitude, longitude, accuracy, speed })
         },
         fail: (err) => {
-          uni.hideLoading()
-          uni.showToast({
-            title: '定位失败',
-            icon: 'error',
-            duration: 2000
-          })
+          uni.showToast({ title: '定位失败', icon: 'error', duration: 2000 })
           console.error('获取位置失败：', err)
+        },
+        complete: () => {
+          uni.hideLoading()
         }
       })
     },
 
-    // 地图错误处理
+    // 地图错误兜底
     handleMapError(e) {
       console.log('地图错误', e.detail)
     }

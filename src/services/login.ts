@@ -6,7 +6,8 @@ import { supabase } from '@/utils/constants'
  * 2) 有效且本地有 supabase_token 则直接返回；
  * 3) 否则调用 uni.login 获取 code，占位存储，等待后端换 token。
  */
-export const performLogin = async () => {
+// 统一的登录流程（示例占位）：先检验 session，再获取 code
+export const performLogin = async (): Promise<void> => {
   try {
     await uni.checkSession()
     const token = uni.getStorageSync('supabase_token')
