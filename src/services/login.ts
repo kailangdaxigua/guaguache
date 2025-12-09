@@ -1,7 +1,11 @@
+// Supabase Edge Function URL（微信登录）
+const FUNCTION_URL =
+  'https://xllwbrwwfdfnmioiqeez.supabase.co/functions/v1/wechat-login'
+
 export const performLogin = async (): Promise<void> => {
   try {
     await uni.checkSession()
-    const token = uni.getStorageSync('app_token')
+    const token = uni.getStorageSync('supabase_token')
     if (token) return
     // session 有效但本地无 token，继续走登录换取逻辑
   } catch (err) {
@@ -11,9 +15,24 @@ export const performLogin = async (): Promise<void> => {
   try {
     const res = await uni.login()
     if (res.code) {
-      // TODO: 将 code 发送到后端换取自己的业务 token
-      uni.setStorageSync('login_code', res.code)
-      uni.showToast({ title: '获取 code 成功', icon: 'success' })
+      // 将 code 发送到 Supabase Edge Function 换取业务 token
+      const { data, statusCode } = await uni.request({
+        url: FUNCTION_URL,
+        method: 'POST',
+        data: { code: res.code },
+        timeout: 10000,
+      })
+
+      if (statusCode === 200 && data && typeof data === 'object') {
+        const token = (data as any).token
+        const userId = (data as any).user_id
+        if (token) uni.setStorageSync('supabase_token', token)
+        if (userId) uni.setStorageSync('user_id', userId)
+        uni.showToast({ title: '登录成功', icon: 'success' })
+      } else {
+        console.error('Edge Function 返回异常', data)
+        uni.showToast({ title: '登录失败', icon: 'none' })
+      }
     } else {
       uni.showToast({ title: '未获取到 code', icon: 'none' })
     }

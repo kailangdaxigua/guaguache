@@ -55,6 +55,32 @@
 </template>
 
 <script>
+const getProfilePromise = () => {
+  return new Promise((resolve, reject) => {
+    uni.getUserProfile({
+      desc: '用于完善用户资料',
+      success: (res) => resolve(res.userInfo),
+      fail: (err) => reject(err)
+    })
+  })
+}
+
+const getLoginCodePromise = () => {
+  return new Promise((resolve, reject) => {
+    uni.login({
+      provider: 'weixin',
+      success: (res) => {
+        if (res.code) {
+          resolve(res.code)
+        } else {
+          reject(new Error(res.errMsg || '未获取到 code'))
+        }
+      },
+      fail: (err) => reject(err)
+    })
+  })
+}
+
 export default {
   name: 'ProfilePage',
   methods: {
