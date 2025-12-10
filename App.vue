@@ -5,11 +5,18 @@
 </template>
 
 <script>
+import { performLogin } from './src/services/login'
+
 export default {
   name: 'App',
   // 小程序全局生命周期：这里可放初始化逻辑或埋点
-  onLaunch() {
+  async onLaunch() {
     console.log('App launched.')
+    try {
+      await performLogin()
+    } catch (err) {
+      console.error('Supabase 登录初始化失败', err)
+    }
   },
   onShow() {
     console.log('App show.')

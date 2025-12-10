@@ -40,36 +40,77 @@
         进行校验。
       </text>
     </view>
+
+    <view class="actions">
+      <button
+        class="save-btn"
+        :loading="saving"
+        :disabled="saving"
+        @tap="handleSave"
+      >
+        保存修改
+      </button>
+    </view>
   </view>
 </template>
 
 <script>
+import { updateProfile, uploadAvatar } from '../../../src/services/profile'
+
 export default {
   name: 'ProfileInfoPage',
   data() {
-    const nickname = '测试用户'
+    const nickname = uni.getStorageSync('nickname') || '测试用户'
     const defaultAvatarUrl =
       'https://mmbiz.qpic.cn/mmbiz/icTdbqWNOwNRna42FI242Lcia07jQodd2FJGIYQfG0LAJGFxM4FbnQP6yfMxBgJ0F3YRqJCJ1aPAK2dQagdusBZg/0'
     return {
       nickname,
-      avatarUrl: defaultAvatarUrl,
+      avatarUrl: uni.getStorageSync('avatar_url') || defaultAvatarUrl,
       avatarText: nickname.slice(0, 1),
       avatarBg: '#0ea5e9',
-      defaultAvatarUrl
+      defaultAvatarUrl,
+      saving: false
     }
   },
   methods: {
-    onChooseAvatar(e) {
-      // e.detail.avatarUrl 为微信返回的临时头像地址
+    async onChooseAvatar(e) {
       const { avatarUrl } = e.detail || {}
-      if (!avatarUrl) return
-      this.avatarUrl = avatarUrl
-      // TODO: 按需调用 mediaCheckAsync 做头像安全校验
+      if (!avatarUrl || this.saving) return
+      uni.showLoading({ title: '上传中...' })
+      this.saving = true
+      try {
+        const publicUrl = await uploadAvatar(avatarUrl)
+        this.avatarUrl = publicUrl
+        await updateProfile({ avatar_url: publicUrl, nickname: this.nickname })
+        uni.setStorageSync('avatar_url', publicUrl)
+        uni.showToast({ title: '头像已更新', icon: 'success' })
+      } catch (err) {
+        console.error('上传头像失败', err)
+        uni.showToast({ title: '上传失败', icon: 'none' })
+      } finally {
+        this.saving = false
+        uni.hideLoading()
+      }
     },
     onNicknameInput(e) {
       this.nickname = e.detail.value || ''
       this.avatarText = this.nickname ? this.nickname.slice(0, 1) : '我'
-      // TODO: 按需调用 msgSecCheck 做昵称文本安全校验
+    },
+    async handleSave() {
+      if (this.saving) return
+      this.saving = true
+      uni.showLoading({ title: '保存中...' })
+      try {
+        await updateProfile({ nickname: this.nickname, avatar_url: this.avatarUrl })
+        uni.setStorageSync('nickname', this.nickname)
+        uni.showToast({ title: '已保存', icon: 'success' })
+      } catch (err) {
+        console.error('更新昵称失败', err)
+        uni.showToast({ title: '保存失败', icon: 'none' })
+      } finally {
+        this.saving = false
+        uni.hideLoading()
+      }
     }
   }
 }
@@ -172,6 +213,24 @@ export default {
 
 .tip-link {
   color: #0ea5e9;
+}
+
+.actions {
+  margin-top: 20px;
+}
+
+.save-btn {
+  width: 100%;
+  background: linear-gradient(to right, #0ea5e9, #0284c7);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 0;
+  font-size: 16px;
+}
+
+.save-btn::after {
+  border: none;
 }
 </style>
 

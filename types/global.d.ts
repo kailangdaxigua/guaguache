@@ -18,5 +18,17 @@ declare namespace NodeJS {
   }
 }
 
+// Vite 环境变量类型定义
+interface ImportMetaEnv {
+  /** Supabase 项目 URL */
+  readonly VITE_SUPABASE_URL: string
+  /** Supabase Anon Public Key */
+  readonly VITE_SUPABASE_ANON_KEY: string
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv
+}
+
 // 声明 uni 全局对象（uniapp 运行时提供）
 declare const uni: any
