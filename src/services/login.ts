@@ -2,35 +2,98 @@
 const FUNCTION_URL =
   'https://xllwbrwwfdfnmioiqeez.supabase.co/functions/v1/wechat-login'
 
+// Supabase Anon Key（公开密钥，用于 Edge Function 公开访问）
+// 优先从环境变量获取，如果没有则使用硬编码的值
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+
 export const performLogin = async (): Promise<void> => {
   try {
     await uni.checkSession()
     const token = uni.getStorageSync('supabase_token')
-    if (token) return
-    // session 有效但本地无 token，继续走登录换取逻辑
+    // 验证已存储的 token 是否有效
+    if (token && typeof token === 'string' && token.indexOf('.') !== -1 && token.split('.').length === 3) {
+      console.log('✅ 已有有效的登录 token，跳过登录')
+      return
+    } else if (token) {
+      console.warn('⚠️ 存储的 token 格式无效，将重新登录')
+      console.warn('当前 token 值:', token)
+      // 清除无效的 token
+      uni.removeStorageSync('supabase_token')
+      uni.removeStorageSync('user_id')
+    }
+    // session 有效但本地无 token 或 token 无效，继续走登录换取逻辑
   } catch (err) {
     console.warn('session 校验失败，准备重新登录', err)
   }
 
   try {
-    const res = await uni.login()
-    if (res.code) {
+    const loginRes = await uni.login()
+
+    if (loginRes.errMsg !== 'login:ok') {
+      throw new Error(loginRes.errMsg)
+    }
+
+    if (loginRes.code) {
       // 将 code 发送到 Supabase Edge Function 换取业务 token
-      const { data, statusCode } = await uni.request({
+      // 【关键修复】：wechat-login 是公开函数，需要传递 Anon Key 作为 apikey 头部
+      // 这是 Supabase Edge Functions 公开访问的最佳实践，可以绕过不必要的 Authorization 检查
+      // ❌ 不要添加 Authorization 头部（即使 token 存在）
+      const { data, statusCode } = (await uni.request({
         url: FUNCTION_URL,
         method: 'POST',
-        data: { code: res.code },
+        header: {
+          'Content-Type': 'application/json',
+          // 【关键修复】：显式传递 Anon Key 作为 apikey 头部
+          apikey: SUPABASE_ANON_KEY,
+          // ✅ 确保没有 Authorization 头部！
+          // 如果你的 uni.request 封装函数会自动添加，你需要强制覆盖或禁用它。
+        },
+        data: { code: loginRes.code },
         timeout: 10000,
-      })
+      })) as any
+
+      if (statusCode !== 200 || !data || typeof data !== 'object') {
+        console.error('Edge Function 返回异常')
+        console.error('状态码:', statusCode)
+        console.error('响应数据:', data)
+        uni.showToast({ title: '登录失败', icon: 'none' })
+        throw new Error('登录请求失败')
+      }
 
       if (statusCode === 200 && data && typeof data === 'object') {
         const token = (data as any).token
         const userId = (data as any).user_id
-        if (token) uni.setStorageSync('supabase_token', token)
-        if (userId) uni.setStorageSync('user_id', userId)
-        uni.showToast({ title: '登录成功', icon: 'success' })
+        
+        console.log('=== 登录响应调试信息 ===')
+        console.log('响应状态码:', statusCode)
+        console.log('响应数据:', data)
+        console.log('Token 值:', token)
+        console.log('User ID:', userId)
+        
+        // 验证 token 格式（JWT token 应该包含两个点号）
+        if (token && typeof token === 'string' && token.indexOf('.') !== -1 && token.split('.').length === 3) {
+          if (token) uni.setStorageSync('supabase_token', token)
+          if (userId) uni.setStorageSync('user_id', userId)
+          console.log('✅ Token 格式验证通过，已保存')
+          console.log('Token 长度:', token.length)
+          console.log('========================')
+          uni.showToast({ title: '登录成功', icon: 'success' })
+        } else {
+          console.error('❌ Token 格式无效！')
+          console.error('Token 值:', token)
+          console.error('Token 类型:', typeof token)
+          console.error('Token 是否包含点号:', token?.indexOf('.') !== -1)
+          if (token) {
+            console.error('Token 分段数量:', token.split('.').length)
+          }
+          console.error('========================')
+          uni.showToast({ title: '登录失败：Token 格式错误', icon: 'none' })
+          throw new Error('登录返回的 Token 格式无效')
+        }
       } else {
-        console.error('Edge Function 返回异常', data)
+        console.error('Edge Function 返回异常')
+        console.error('状态码:', statusCode)
+        console.error('响应数据:', data)
         uni.showToast({ title: '登录失败', icon: 'none' })
       }
     } else {
