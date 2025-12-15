@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import { performLogin } from './src/services/login'
+import { performLogin } from './common/api'
 
 export default {
   name: 'App',
