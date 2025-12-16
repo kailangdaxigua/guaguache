@@ -1,18 +1,9 @@
 <template>
   <view class="info-page">
     <view class="card">
-      <button
-        class="avatar-btn"
-        open-type="chooseAvatar"
-        @chooseavatar="onChooseAvatar"
-      >
+      <button class="avatar-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
         <view class="avatar" :style="{ backgroundColor: avatarBg }">
-          <image
-            v-if="avatarUrl"
-            :src="avatarUrl"
-            class="avatar-img"
-            mode="aspectFill"
-          />
+          <image v-if="avatarUrl" :src="avatarUrl" class="avatar-img" mode="aspectFill" />
           <text v-else class="avatar-text">{{ avatarText }}</text>
         </view>
         <text class="avatar-action">更换头像</text>
@@ -20,13 +11,7 @@
 
       <view class="info">
         <text class="label">昵称</text>
-        <input
-          type="nickname"
-          class="nickname-input"
-          placeholder="请输入昵称"
-          :value="nickname"
-          @input="onNicknameInput"
-        />
+        <input type="nickname" class="nickname-input" placeholder="请输入昵称" :value="nickname" @input="onNicknameInput" />
       </view>
     </view>
 
@@ -42,12 +27,7 @@
     </view>
 
     <view class="actions">
-      <button
-        class="save-btn"
-        :loading="saving"
-        :disabled="saving"
-        @tap="handleSave"
-      >
+      <button class="save-btn" :loading="saving" :disabled="saving" @tap="handleSave">
         保存修改
       </button>
     </view>
@@ -55,7 +35,7 @@
 </template>
 
 <script>
-import { updateProfile, uploadAvatar } from '../../../src/services/profile'
+import { updateProfile, uploadAvatar } from '@/services/profile.js'
 
 export default {
   name: 'ProfileInfoPage',
@@ -76,12 +56,27 @@ export default {
     async onChooseAvatar(e) {
       const { avatarUrl } = e.detail || {}
       if (!avatarUrl || this.saving) return
+      
+      // 1. 从本地缓存里拿出当前登录的用户信息
+      const currentUser = uni.getStorageSync('user')
+      
+      // 2. 检查缓存里有没有 openid
+      if (!currentUser || !currentUser.openid) {
+        uni.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+      
       uni.showLoading({ title: '上传中...' })
       this.saving = true
       try {
-        const publicUrl = await uploadAvatar(avatarUrl)
+        // 3. 调用上传接口，把 openid 传进去！
+        const publicUrl = await uploadAvatar(currentUser.openid, avatarUrl)
         this.avatarUrl = publicUrl
-        await updateProfile({ avatar_url: publicUrl, nickname: this.nickname })
+        // 4. 更新用户资料，把 openid 传进去！
+        await updateProfile(currentUser.openid, { 
+          avatar_url: publicUrl, 
+          nickname: this.nickname 
+        })
         uni.setStorageSync('avatar_url', publicUrl)
         uni.showToast({ title: '头像已更新', icon: 'success' })
       } catch (err) {
@@ -98,10 +93,24 @@ export default {
     },
     async handleSave() {
       if (this.saving) return
+      
+      // 1. 从本地缓存里拿出当前登录的用户信息
+      const currentUser = uni.getStorageSync('user')
+      
+      // 2. 检查缓存里有没有 openid
+      if (!currentUser || !currentUser.openid) {
+        uni.showToast({ title: '请先登录', icon: 'none' })
+        return
+      }
+      
       this.saving = true
       uni.showLoading({ title: '保存中...' })
       try {
-        await updateProfile({ nickname: this.nickname, avatar_url: this.avatarUrl })
+        // 3. 调用更新接口，把 openid 传进去！
+        await updateProfile(currentUser.openid, { 
+          nickname: this.nickname, 
+          avatar_url: this.avatarUrl 
+        })
         uni.setStorageSync('nickname', this.nickname)
         uni.showToast({ title: '已保存', icon: 'success' })
       } catch (err) {
@@ -233,4 +242,3 @@ export default {
   border: none;
 }
 </style>
-

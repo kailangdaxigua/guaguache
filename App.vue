@@ -5,24 +5,15 @@
 </template>
 
 <script>
-import { performLogin } from './common/api'
-
 export default {
-  name: 'App',
-  // 小程序全局生命周期：这里可放初始化逻辑或埋点
-  async onLaunch() {
-    console.log('App launched.')
-    try {
-      await performLogin()
-    } catch (err) {
-      console.error('Supabase 登录初始化失败', err)
+  onLaunch() {
+    const user = uni.getStorageSync('user')
+    // 未登录 → 跳转登录页
+    if (!user || !user.openid) {
+      uni.reLaunch({
+        url: '/pages/login/login'
+      })
     }
-  },
-  onShow() {
-    console.log('App show.')
-  },
-  onHide() {
-    console.log('App hide.')
   }
 }
 </script>
